@@ -14,7 +14,11 @@ def thread_process(alarm_start):
 
     person = camera.snap() # 0 for left /// 1 for right
 
-    fish_screen.update_AVOID_POINTS(alarm_start, person)
+    rtn = fish_screen.key_update()
+    
+    fish_screen.update_AVOID_POINTS(alarm_start, rtn)
+    
+    #fish_screen.update_AVOID_POINTS(alarm_start, person)
 
 while True:
 
