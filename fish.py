@@ -100,14 +100,21 @@ class fish_screen:
 			for entity in entity_ar:
 				entity.current_avoid = None
 
+	def key_update(self):
+		key = pygame.key.get_pressed()
+		if key[k_p] is True:
+			return 1
+		if key[k_o] is True:
+			return 0
+		
 	def update(self):
 
 		for event in pygame.event.get():  
 			if event.type == pygame.QUIT: 
 				pygame.quit()
-
+	
 		self.screen.fill((155,155,155))
-
+		
 		if self.alarm is not None:
 			if self.alarm.check() is True:
 				for fish in entity_ar: fish.current_avoid = None
