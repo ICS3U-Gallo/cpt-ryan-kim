@@ -1,63 +1,46 @@
-from imutils.object_detection import non_max_suppression
-from imutils import paths
-from cv2 import *
 import numpy as np
-import imutils
-from datetime import *
 
-class camera:
-	
-	def __init__(self):
-		self.cam = VideoCapture(0)
-		ret = self.cam.set(3,420)
-		ret = self.cam.set(4,240)
+class pedestrian_detector:
+    def __init__(self, img):
 
-		self.start_time = datetime.now()
+        self.whites = []
+        self.pixel_spacing = 10
+		self.thresh = 200
+        self.matrix = img
 
-		self.hog = cv2.HOGDescriptor()
-		self.hog.setSVMDetector(cv2.HOGDescriptor_getDefaultPeopleDetector())
+        self.pathway = {"x": 0,
+                        "y": 30,
+                        "x1": len(self.matrix),
+                        "y1":250}
 
-		self.orientation_threshhold = 420/2
+        for r in range(0,len(self.matrix)), self.pixel_spacing:
+            for c in range(0,len(self.matrix[r]),self.pixel_spacing):
 
-	def find_W_H(self,x,y,x1,y1):
+                pixel = matrix[r][c] 
 
-		w = x-x1
-		h = y-y1
-		return w, h
-	
-	def max_body_seen(self, pick):
-	
-		max = 0
-		max_w, max_h = self.find_W_H(pick[max][0], pick[max][1], pick[max][2], pick[max][3])
+                if pixel is (255,255,255):
+                    if r - self.pixel_spacing >= 0 and c - self.pixel_spacing >= 0:
+                        if self.matrix[r -self.pixel_spacing][c -self.pixel_spacing] is (255,255,255):
+                            if c >= self.pathway["x"] and c <= self.pathway["x1"] and r >= self.pathway["y1"] and r <= self.pathway["y"]:
 
-		for i in range(len(pick)):
-			w, h = self.find_W_H(pick[i][0], pick[i][1], pick[i][2], pick[i][3])
+                                self.whites.append([c,r])
 
-			if w * h > max_w * max_h:
-				max = i
-		
-		return max
+    def snap(self):
+        for pair in self.whites:
+            left_count = 0
+            right_count = 0
 
-	def snap(self):
-		r, image = self.cam.read()
+            if pair[0] >= len(self.matrix)//2:
+                right_count += 1
+            
+            else:
+                left_count += 1
 
-		if r:
-			image = imutils.resize(image, width=image.shape[1])
-			rects, weights = self.hog.detectMultiScale(image, winStride=(4, 4), padding=(8, 8), scale=1.05)
-
-			rects = np.array([[x, y, x + w, y + h] for (x, y, w, h) in rects])
-			pick = non_max_suppression(rects,probs=None, overlapThresh=0.65)
-			
-			if pick == []:
+			if left_count <= self.thresh and right_count <= self.thresh:
 				return None
 
-			else:
-				index_of_max = self.max_body_seen(pick) 
-				return pick[index_of_max][0] // self.orientation_threshhold
-
-		else:
-			return -1
-
-	def end_session(self):
-		print(f"Started at --> {self.start_time} \n Ended at --> {datetime.now()}")
-		self.cam.release()
+            if left_count > right_count:
+                return 0
+            
+            else:
+                return 1
