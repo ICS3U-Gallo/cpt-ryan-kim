@@ -1,5 +1,6 @@
 from pygame.locals import *
-import math
+from cam import pedestrian_detector
+from sub_modules import *
 import pygame
 import random
 
@@ -7,37 +8,13 @@ entity_ar = []
 WIDTH = 500
 HEIGHT = 500
 
-def distance(x, y, x1, y1):
-	return math.sqrt((x - x1)**2 + (y - y1)**2)
-
-def lerp(p, p1, factor):
-	return ((p1 - p) * factor)
-
-def reverse_lerp(p, p1, factor):
-	return ((p1-p) // factor )
-
-class point:
-	def __init__(self,x,y):
-		self.x = x
-		self.y = y
-
-class alarm:
-	def __init__(self,start, time):
-		self.start = start
-		self.end = start + time
-
-	def check(self):
-		if int(time.time()) >= self.end: return True
-		
-		else: return False
-
 class entity:
-	def __init__(self, id):
-		self.ID = id
+	def __init__(self):
 		self.pos = point(random.randint(0, WIDTH), random.randint(0, HEIGHT))
 		self.dest = point(random.randint(0, WIDTH),random.randint(0, HEIGHT))
 		self.satisfaction_dist = 50
 		self.speed = .03
+		self.run_speed = 10
 
 		self.avoid_ar = [point(0, HEIGHT//2), point(WIDTH, HEIGHT//2)]
 		self.current_avoid = None
@@ -66,58 +43,50 @@ class entity:
 
 def gen_entity(count):
 	for num in range(count):
-		fish = entity(num)
+		fish = entity()
 		entity_ar.append(fish)
 
 class fish_screen:
-
 	def __init__(self):
-
-		self.snap_interval = 3
-
 		gen_entity(1)
 
 		flags = DOUBLEBUF
 		self.screen = pygame.display.set_mode((WIDTH, HEIGHT), flags)
 		self.screen.set_alpha(None)
 
-		self.alarm = None
+	def restrict_pos(self,ar):
 
-	def update_AVOID_POINTS(self, second_time, val):
-
-		alarm = alarm(int(time.time()), 10)
-		
-		if self.alarm is None:	
-			self.alarm = alarm(int(time.time()), 10)
-
-			for entity in entity_ar:
-				entity.current_avoid = val
+		for fish in ar:
+			if fish.pos.x <= -300:
+				fish.pos.x = -300
+			elif fish.pos.x >= WIDTH + 300:
+				fish.pos.x = WIDTH + 300
 			
-		elif second_time >= self.alarm.end:
-			self.alarm.start = None
-			self.alarm.end = None
+			if fish.pos.y <= -300:
+				fish.pos.y = -300
 
+			elif fish.pos.y >= HEIGHT + 300:
+				fish.pos.y = HEIGHT + 300
+
+	def update_AVOID_POINTS(self, reduced_img):
+		
+		ped = pedestrian_detector(reduced_img)
+
+		if ped.left_sum >= ped.density_thresh and ped.right_sum >= ped.density_thresh:
+			for entity in entity_ar:
+				entity.current_avoid = max(ped.left_sum, ped.right_sum)
+
+		else:
 			for entity in entity_ar:
 				entity.current_avoid = None
-
-	def key_update(self):
-		key = pygame.key.get_pressed()
-		if key[k_p] is True:
-			return 1
-		if key[k_o] is True:
-			return 0
-		
+			
 	def update(self):
 
 		for event in pygame.event.get():  
 			if event.type == pygame.QUIT: 
 				pygame.quit()
-	
+
 		self.screen.fill((155,155,155))
-		
-		if self.alarm is not None:
-			if self.alarm.check() is True:
-				for fish in entity_ar: fish.current_avoid = None
 
 		for fish in entity_ar:
 			if fish.at_dest() is False:
@@ -126,16 +95,18 @@ class fish_screen:
 					fish.move(int(lerp(fish.pos.y, fish.dest.y, fish.speed)), 'y')
 
 				else:
-					fish.move(int(reverse_lerp(fish.pos.x, fish.avoid_ar[fish.current_avoid].x, "x")))
-					fish.move(int(reverse_lerp(fish.pos.y, fish.avoid_ar[fish.current_avoid].y, "y")))
+					_x , _y = equadistant_point(fish.pos.x, fish.pos.y, fish.avoid_ar[fish.current_avoid].x, fish.avoid_ar[fish.current_avoid].y , .01)
+
+					fish.move(int(lerp(fish.pos.x, _x, fish.run_speed)),  "x")
+					fish.move(int(lerp(fish.pos.y, _y, fish.run_speed)), "y")
 			else:
 				fish.gen_new_dest()
+		
+		self.restrict_pos(entity_ar)
 
-			
 		for fish in entity_ar:	
 			if fish.current_avoid is not None:
 				pygame.draw.rect(self.screen, (0,255,0),((fish.avoid_ar[fish.current_avoid].x, fish.avoid_ar[fish.current_avoid].y),(10,10)))
-
 			pygame.draw.rect(self.screen, (255,255,255),((fish.pos.x, fish.pos.y),(10,10)))
 			pygame.draw.rect(self.screen, (255,0,0),((fish.dest.x, fish.dest.y),(10,10)))
 
