@@ -1,45 +1,63 @@
+import cv2
+import numpy as np
 from cam import *
 from fish import *
 import threading
 import time
 
-camera = camera()
+cap = cv2.VideoCapture(0)
+
+cap.set(3,420)
+cap.set(4,240)
+
+fgbg = cv2.createBackgroundSubtractorMOG2()
+
 fish_screen = fish_screen()
 
 end_time = 15 * 60 * 60 # Ends the program at 15:00 (3:00 pm)
 
-snapped = False
+class alarm:
+	def __init__(self,start, time):
+		self.start = start
+		self.end = start + time
 
-def thread_process(alarm_start):
+	def check(self):
+		if int(time.time()) >= self.end: return True
+		
+		else: return False
 
-    person = camera.snap() # 0 for left /// 1 for right
+class compile:
+    def __init__(self):
+        self.alarm = None
 
-    rtn = fish_screen.key_update()
-    
-    fish_screen.update_AVOID_POINTS(alarm_start, rtn)
-    
-    #fish_screen.update_AVOID_POINTS(alarm_start, person)
+    def session(self):
 
-while True:
+        while True:
 
-    time.sleep(0.03)
-    seconds = int(time.time() % 10)
-
-    if fish_screen.alarm is not None:
+            time.sleep(0.03)
             
-        t1 = threading.Thread(target=thread_process, args=(int(time.time()),))
+            ret, frame = cap.read()
+            fgmask = fgbg.apply(frame)
 
-        if t1.isAlive() is False: t1.join()
+            if self.alarm is None:
+                t1 = threading.Thread(target=fish_screen.update_AVOID_POINTS, args=(fgmask,))
+                t1.start()
 
-        if seconds % fish_screen.snap_interval is not 0: snapped = False
-            
-        elif seconds % fish_screen.snap_interval is 0 and snapped is False:
-            
-            snapped = True
-            t1.start()
+                self.alarm = alarm(int(time.time()), 2)
 
-    fish_screen.update()
+            elif self.alarm is not None:
+                if t1.isAlive() is False: t1.join()
 
-    if int(time.time()) is end_time: 
-        camera.end_session()
-        break
+                if self.alarm.check(): self.alarm = None   
+
+            fish_screen.update()
+
+            if int(time.time()) is end_time: 
+
+                break
+
+run = compile()
+
+run.session()
+
+cap.release()
