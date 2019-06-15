@@ -1,46 +1,26 @@
+from sub_modules import split
 import numpy as np
 
 class pedestrian_detector:
-    def __init__(self, img):
+	def __init__(self, img):
 
-        self.whites = []
-        self.pixel_spacing = 10
-		self.thresh = 200
-        self.matrix = img
+		self.ar = img
 
-        self.pathway = {"x": 0,
-                        "y": 30,
-                        "x1": len(self.matrix),
-                        "y1":250}
+		self.density_thresh = 138465.0
 
-        for r in range(0,len(self.matrix)), self.pixel_spacing:
-            for c in range(0,len(self.matrix[r]),self.pixel_spacing):
+		self.left_sum = 0
+		self.right_sum = 0
 
-                pixel = matrix[r][c] 
+		self.sum_thread = np.sum(self.ar, axis=0)
 
-                if pixel is (255,255,255):
-                    if r - self.pixel_spacing >= 0 and c - self.pixel_spacing >= 0:
-                        if self.matrix[r -self.pixel_spacing][c -self.pixel_spacing] is (255,255,255):
-                            if c >= self.pathway["x"] and c <= self.pathway["x1"] and r >= self.pathway["y1"] and r <= self.pathway["y"]:
+		half_count = len(self.sum_thread) // 2
 
-                                self.whites.append([c,r])
+		for row_sum in range(len(self.sum_thread)):
 
-    def snap(self):
-        for pair in self.whites:
-            left_count = 0
-            right_count = 0
+			if row_sum <= half_count:
+				self.left_sum += self.sum_thread[row_sum]
+			
+			else:
+				self.right_sum += self.sum_thread[row_sum]
 
-            if pair[0] >= len(self.matrix)//2:
-                right_count += 1
-            
-            else:
-                left_count += 1
-
-			if left_count <= self.thresh and right_count <= self.thresh:
-				return None
-
-            if left_count > right_count:
-                return 0
-            
-            else:
-                return 1
+		print(self.left_sum, self.right_sum)
