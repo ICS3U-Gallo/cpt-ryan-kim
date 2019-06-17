@@ -66,8 +66,7 @@ class compile:
             fish_screen.update()
 
             #Check if the progam schedule has been satisified and should the loop be broken
-            if int(time.time()) is end_time: 
-                break
+            if int(time.time()) is end_time: break
 
 #Initalize a compiler object
 run = compile()
