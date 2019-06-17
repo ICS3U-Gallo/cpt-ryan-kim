@@ -36,7 +36,7 @@ class entity:
 
 		if axis is "x":
 			self.pos.x += val
-		if asix is "y":
+		if axis is "y":
 			self.pos.y += val
 
 	def gen_new_dest(self):
