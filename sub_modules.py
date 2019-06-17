@@ -11,6 +11,7 @@ class alarm:
 
 	def check(self):
 		"""Check the current time against the end time of the alarm object"""
+
 		if int(time.time()) >= self.end: return True
 		
 		else: return False
