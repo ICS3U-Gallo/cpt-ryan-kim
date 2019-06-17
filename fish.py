@@ -1,5 +1,5 @@
 from pygame.locals import *
-from cam import pedestrian_detector
+from img_transformer import pedestrian_detector
 from sub_modules import *
 import pygame
 import random
